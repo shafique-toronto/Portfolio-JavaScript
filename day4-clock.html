@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Day 4 — Digital Clock</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .card {
+            max-width: 640px;
+            margin: auto;
+            text-align: center;
+            font-size: 18px
+        }
+
+        #clock {
+            font-size: 42px;
+            margin-top: 8px
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h3>Digital Clock</h3>
+            <div id="clock">--:--:--</div>
+        </div>
+    </div>
+
+    <script>
+        function getCurrentTime() {
+            const now = new Date();
+            const hh = String(now.getHours()).padStart(2, '0');
+            const mm = String(now.getMinutes()).padStart(2, '0');
+            const ss = String(now.getSeconds()).padStart(2, '0');
+            return `${hh}:${mm}:${ss}`;
+        }
+
+        function updateClock() { document.getElementById('clock').textContent = getCurrentTime(); }
+
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+
+</html>

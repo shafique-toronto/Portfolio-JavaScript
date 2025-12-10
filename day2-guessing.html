@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Day 2 — Number Guessing Game</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .card {
+            max-width: 640px;
+            margin: auto
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h3>Day 2 — Number Guessing Game</h3>
+            <p>Try to guess the secret number between 1 and 10.</p>
+            <button id="play" class="btn">Play Game</button>
+            <div class="preview" id="gameOutput"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('play').addEventListener('click', function () {
+            const secret = Math.floor(Math.random() * 10) + 1;
+            let guess;
+            let attempts = 0;
+            do {
+                guess = Number(prompt('Guess a number between 1 and 10:'));
+                attempts++;
+                if (guess > secret) alert('Too High!');
+                else if (guess < secret) alert('Too Low!');
+                else alert('Correct! You guessed in ' + attempts + ' attempts.');
+            } while (guess !== secret);
+            document.getElementById('gameOutput').textContent = 'Secret was: ' + secret + ' — Attempts: ' + attempts;
+        });
+    </script>
+</body>
+
+</html>

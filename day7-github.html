@@ -1,0 +1,112 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Day 7 — GitHub Profile Finder</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .card {
+            max-width: 900px;
+            margin: auto
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h3>GitHub Profile Finder</h3>
+            <div style="display:flex;gap:8px">
+                <input id="username" placeholder="Enter GitHub username"
+                    style="flex:1;padding:8px;border-radius:6px;border:1px solid #ddd" />
+                <button id="searchBtn" class="btn">Search</button>
+            </div>
+
+            <div id="result" style="margin-top:12px"></div>
+        </div>
+    </div>
+
+    <script>
+        async function safeJson(response) {
+            try { return await response.json(); } catch (e) { return null; }
+        }
+        function esc(s) { if (s === null || s === undefined) return ''; return String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+
+        class GitHubAPI {
+            async getUserWithRepos(username) {
+                const profileRes = await fetch('https://api.github.com/users/' + encodeURIComponent(username));
+                if (!profileRes.ok) {
+                    const err = await safeJson(profileRes);
+                    const msg = (err && err.message) ? err.message : 'User not found';
+                    const e = new Error(msg); e.status = profileRes.status; throw e;
+                }
+                const profile = await profileRes.json();
+                const reposRes = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}/repos?sort=updated&per_page=50`);
+                const repos = reposRes.ok ? await reposRes.json() : [];
+                return { profile, repos };
+            }
+        }
+
+        class UI {
+            constructor() { this.result = document.getElementById('result'); this.searchBtn = document.getElementById('searchBtn'); this.input = document.getElementById('username'); }
+            showLoading() { this.result.innerHTML = '<div class="preview">Loading…</div>'; this.searchBtn.disabled = true; }
+            hideLoading() { this.searchBtn.disabled = false; }
+            showError(msg) { this.result.innerHTML = '<div class="preview" style="color:#ef4444">' + esc(msg) + '</div>'; this.hideLoading(); }
+            showProfile({ profile, repos }) {
+                const name = profile.name || profile.login;
+                const bio = profile.bio ? esc(profile.bio) : 'No bio';
+                const avatar = profile.avatar_url;
+                const followers = profile.followers;
+                const following = profile.following;
+                const public_repos = profile.public_repos;
+                let html = `<div class="profile" style="display:flex;gap:12px">
+            <div class="avatar" style="width:96px;height:96px;border-radius:8px;overflow:hidden"><img src="${avatar}" style="width:100%;height:100%;object-fit:cover"></div>
+            <div>
+              <h2 style="margin:0">${esc(name)}</h2>
+              <p style="margin:6px 0;color:#6b7280">${bio}</p>
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <div style="background:#f8fafc;padding:6px;border-radius:8px">Followers: ${followers}</div>
+                <div style="background:#f8fafc;padding:6px;border-radius:8px">Following: ${following}</div>
+                <div style="background:#f8fafc;padding:6px;border-radius:8px">Repos: ${public_repos}</div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:12px"><h4>Latest repos</h4></div>
+        `;
+                this.result.innerHTML = html;
+                const reposHtml = (repos || []).slice(0, 10).map(r => {
+                    const desc = r.description ? esc(r.description) : '';
+                    const lang = r.language ? esc(r.language) : '';
+                    return `<div class="repo" style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:8px;border:1px solid #eef2f7;margin-top:8px">
+            <div><a href="${r.html_url}" target="_blank" style="color:var(--primary);font-weight:600">${esc(r.name)}</a>${desc ? '<div style="margin-top:6px"><small>' + desc + '</small></div>' : ''}</div>
+            <div style="text-align:right"><div style="font-size:12px;color:#6b7280">${lang}</div><div style="font-size:12px;color:#6b7280">★ ${r.stargazers_count} • 🍴 ${r.forks_count}</div></div>
+          </div>`;
+                }).join('');
+                this.result.innerHTML += '<div style="margin-top:12px">' + reposHtml + '</div>';
+                this.hideLoading();
+            }
+        }
+
+        const api = new GitHubAPI();
+        const ui = new UI();
+
+        async function handleSearch() {
+            const username = ui.input.value.trim();
+            if (!username) { ui.showError('Please enter a username'); return; }
+            ui.showLoading();
+            try {
+                const data = await api.getUserWithRepos(username);
+                ui.showProfile(data);
+            } catch (err) {
+                ui.showError(err.message || 'Error');
+            }
+        }
+
+        document.getElementById('searchBtn').addEventListener('click', handleSearch);
+        document.getElementById('username').addEventListener('keydown', function (e) { if (e.key === 'Enter') handleSearch(); });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Day 5 — Weather App (Open-Meteo)</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .card {
+            max-width: 640px;
+            margin: auto
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="card">
+            <h3>Weather App (Free API)</h3>
+            <input id="cityInput" placeholder="Enter city (e.g. Toronto)"
+                style="width:100%;padding:10px;border-radius:8px;border:1px solid #ddd" />
+            <button id="getWeather" class="btn" style="margin-top:8px">Get Weather</button>
+            <div id="weather" class="preview">Weather result will appear here.</div>
+        </div>
+    </div>
+
+    <script>
+        async function getWeather() {
+            const city = document.getElementById('cityInput').value.trim();
+            const out = document.getElementById('weather');
+            if (!city) { alert('Enter a city'); return; }
+            out.textContent = 'Loading...';
+
+            try {
+                // Geocoding (free)
+                const geoRes = await fetch('https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(city));
+                const geo = await geoRes.json();
+                if (!geo.results || geo.results.length === 0) { out.textContent = 'City not found'; return; }
+
+                const { latitude, longitude, name } = geo.results[0];
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
+                const weather = await weatherRes.json();
+                if (!weather.current_weather) { out.textContent = 'Weather not available'; return; }
+
+                const t = weather.current_weather.temperature;
+                const wind = weather.current_weather.windspeed;
+                out.innerHTML = `<strong>${name}</strong><br>Temperature: ${t}°C<br>Wind: ${wind} km/h`;
+            } catch (e) {
+                out.textContent = 'Error fetching weather';
+            }
+        }
+
+        document.getElementById('getWeather').addEventListener('click', getWeather);
+        document.getElementById('cityInput').addEventListener('keydown', e => { if (e.key === 'Enter') getWeather(); });
+    </script>
+</body>
+
+</html>
